@@ -10,7 +10,7 @@ services:
       MYSQL_PASSWORD: joomla_pass
     volumes:
       - db_data:/var/lib/mysql
-      - ./joomla-chocolate.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./produccion/joomla-chocolate.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
       - joomla-net
     healthcheck:
@@ -19,11 +19,11 @@ services:
       timeout: 5s
       retries: 10
 
-  # ── Joomla 6 (tu app desde /opt/lampp/htdocs/joomla) ────
+  # ── Joomla 6 ────────────────────────────────────────────
   joomla:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: produccion/Dockerfile
     restart: unless-stopped
     depends_on:
       db:
@@ -32,11 +32,6 @@ services:
         condition: service_started
     ports:
       - "127.0.0.1:3210:80"
-    volumes:
-      # Mantiene la ruta /joomla que usa XAMPP
-      - /opt/lampp/htdocs/joomla:/var/www/html/joomla
-      # Sobreescribe configuration.php con la versión para Docker
-      - ./configuration.docker.php:/var/www/html/joomla/configuration.php
     networks:
       - joomla-net
 

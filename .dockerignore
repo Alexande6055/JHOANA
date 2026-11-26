@@ -1,0 +1,8 @@
+**
+!joomla/
+!joomla/**
+!produccion/
+produccion/*
+!produccion/apache-phpmyadmin.conf
+!produccion/configuration.docker.php
+!produccion/joomla-chocolate.sql
