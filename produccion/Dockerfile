@@ -1,7 +1,10 @@
 FROM php:8.3-apache
 
 # Habilitar módulos de Apache necesarios para Joomla
-RUN a2enmod rewrite headers expires
+RUN a2enmod rewrite headers expires proxy proxy_http
+
+COPY apache-phpmyadmin.conf /etc/apache2/conf-available/phpmyadmin.conf
+RUN a2enconf phpmyadmin
 
 # Instalar extensiones PHP requeridas por Joomla 6
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -38,13 +41,3 @@ RUN { \
 RUN sed -i '/<Directory \/var\/www\/>/,/<\/Directory>/ s/AllowOverride None/AllowOverride All/' /etc/apache2/apache2.conf
 
 WORKDIR /var/www/html
-
-COPY joomla/ /var/www/html/joomla/
-COPY produccion/configuration.docker.php /var/www/html/joomla/configuration.php
-
-RUN chown -R www-data:www-data \
-    /var/www/html/joomla/administrator/logs \
-    /var/www/html/joomla/administrator/cache \
-    /var/www/html/joomla/cache \
-    /var/www/html/joomla/images \
-    /var/www/html/joomla/tmp
