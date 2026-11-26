@@ -9,6 +9,20 @@ RUN a2enconf phpmyadmin
 COPY joomla/ /var/www/html/joomla/
 COPY produccion/configuration.docker.php /var/www/html/joomla/configuration.php
 
+# Apache corre como www-data. Joomla necesita escribir en caché, logs y tmp.
+RUN install -d -o www-data -g www-data \
+        /var/www/html/joomla/cache \
+        /var/www/html/joomla/administrator/cache/language \
+        /var/www/html/joomla/logs \
+        /var/www/html/joomla/administrator/logs \
+        /var/www/html/joomla/tmp \
+    && chown -R www-data:www-data \
+        /var/www/html/joomla/cache \
+        /var/www/html/joomla/administrator/cache \
+        /var/www/html/joomla/logs \
+        /var/www/html/joomla/administrator/logs \
+        /var/www/html/joomla/tmp
+
 # Instalar extensiones PHP requeridas por Joomla 6
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libpng-dev \
