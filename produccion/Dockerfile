@@ -15,12 +15,14 @@ RUN install -d -o www-data -g www-data \
         /var/www/html/joomla/administrator/cache/language \
         /var/www/html/joomla/logs \
         /var/www/html/joomla/administrator/logs \
+        /var/www/html/joomla/templates/shaper_helixultimate/css \
         /var/www/html/joomla/tmp \
     && chown -R www-data:www-data \
         /var/www/html/joomla/cache \
         /var/www/html/joomla/administrator/cache \
         /var/www/html/joomla/logs \
         /var/www/html/joomla/administrator/logs \
+        /var/www/html/joomla/templates/shaper_helixultimate/css \
         /var/www/html/joomla/tmp
 
 # Instalar extensiones PHP requeridas por Joomla 6
