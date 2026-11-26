@@ -1,0 +1,63 @@
+services:
+  # ── Base de datos MariaDB ────────────────────────────────
+  db:
+    image: mariadb:10.4
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_DATABASE: joomla-chocolate
+      MYSQL_USER: joomla
+      MYSQL_PASSWORD: joomla_pass
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./joomla-chocolate.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - joomla-net
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-prootpass"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # ── Joomla 6 (tu app desde /opt/lampp/htdocs/joomla) ────
+  joomla:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "3210:80"
+    volumes:
+      # Mantiene la ruta /joomla que usa XAMPP
+      - /opt/lampp/htdocs/joomla:/var/www/html/joomla
+      # Sobreescribe configuration.php con la versión para Docker
+      - ./configuration.docker.php:/var/www/html/joomla/configuration.php
+    networks:
+      - joomla-net
+
+  # ── phpMyAdmin ──────────────────────────────────────────
+  phpmyadmin:
+    image: phpmyadmin:latest
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "3211:80"
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+      PMA_USER: root
+      PMA_PASSWORD: rootpass
+    networks:
+      - joomla-net
+
+networks:
+  joomla-net:
+    driver: bridge
+
+volumes:
+  db_data:
