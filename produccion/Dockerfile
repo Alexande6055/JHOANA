@@ -44,6 +44,7 @@ COPY produccion/configuration.docker.php /var/www/html/joomla/configuration.php
 
 RUN chown -R www-data:www-data \
     /var/www/html/joomla/administrator/logs \
+    /var/www/html/joomla/administrator/cache \
     /var/www/html/joomla/cache \
     /var/www/html/joomla/images \
     /var/www/html/joomla/tmp
