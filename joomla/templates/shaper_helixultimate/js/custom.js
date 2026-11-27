@@ -224,10 +224,191 @@
     });
   }
 
+  function initOnePageNavActive() {
+    if (window.__ambatoNavActiveInit) return;
+
+    var desktopLinks = Array.prototype.slice.call(
+      document.querySelectorAll('#sp-menu .sp-megamenu-parent > li > a')
+    );
+    var mobileLinks = Array.prototype.slice.call(
+      document.querySelectorAll('.offcanvas-menu ul.menu > li > a')
+    );
+    var allLinks = desktopLinks.concat(mobileLinks);
+    if (!allLinks.length) return;
+
+    var sectionIds = ['productos', 'historia', 'contacto'];
+    var hasHomeSections =
+      document.body.classList.contains('itemid-101') ||
+      Boolean(document.getElementById('productos') && document.getElementById('historia'));
+
+    if (!hasHomeSections) return;
+
+    window.__ambatoNavActiveInit = true;
+
+    function getNavKeyFromHref(href) {
+      if (!href) return null;
+      var parsed;
+      try {
+        parsed = new URL(href, window.location.href);
+      } catch (e) {
+        return null;
+      }
+      if (parsed.origin !== window.location.origin) return null;
+
+      var p = parsed.pathname.replace(/\/+$/, '');
+      var isHomePath = p === '' || p === '/index.php' || p === '/joomla' || p === '/joomla/index.php';
+      if (!isHomePath) return null;
+
+      var h = parsed.hash.replace(/^#/, '').toLowerCase();
+      if (h === '' || h === 'inicio') return 'inicio';
+      if (sectionIds.indexOf(h) !== -1) return h;
+      return null;
+    }
+
+    function setActiveKey(activeKey) {
+      desktopLinks.forEach(function (a) {
+        var li = a.parentElement;
+        if (!li) return;
+        var key = getNavKeyFromHref(a.getAttribute('href'));
+        if (!key) return;
+        if (key === activeKey) {
+          li.classList.add('active', 'current-item');
+          a.setAttribute('aria-current', 'page');
+        } else {
+          li.classList.remove('active', 'current-item');
+          a.removeAttribute('aria-current');
+        }
+      });
+
+      mobileLinks.forEach(function (a) {
+        var li = a.parentElement;
+        if (!li) return;
+        var key = getNavKeyFromHref(a.getAttribute('href'));
+        if (!key) return;
+        if (key === activeKey) {
+          li.classList.add('active', 'current');
+          a.setAttribute('aria-current', 'page');
+        } else {
+          li.classList.remove('active', 'current');
+          a.removeAttribute('aria-current');
+        }
+      });
+    }
+
+    function closeOffcanvasMenu() {
+      var init = document.querySelector('.offcanvas-init');
+      if (init && init.classList.contains('offcanvas-active')) {
+        init.classList.remove('offcanvas-active', 'full-offcanvas');
+        document.body.style.overflow = '';
+        var menu = document.querySelector('.offcanvas-menu');
+        if (menu) {
+          menu.setAttribute('inert', '');
+          menu.setAttribute('tabindex', '-1');
+        }
+      }
+    }
+
+    function detectSectionFromScroll() {
+      var header = document.getElementById('sp-header');
+      var offset = (header ? header.offsetHeight : 88) + 48;
+      var docEl = document.documentElement;
+      var atBottom = window.innerHeight + window.pageYOffset >= docEl.scrollHeight - 24;
+
+      if (atBottom && document.getElementById('contacto')) {
+        return 'contacto';
+      }
+      if (window.pageYOffset < 80) {
+        return 'inicio';
+      }
+
+      var current = 'inicio';
+      sectionIds.forEach(function (id) {
+        var el = document.getElementById(id);
+        if (!el) return;
+        if (el.getBoundingClientRect().top <= offset) {
+          current = id;
+        }
+      });
+      return current;
+    }
+
+    var lockUntil = 0;
+    var scrollRaf = null;
+
+    function syncOnScroll() {
+      if (Date.now() < lockUntil) return;
+      setActiveKey(detectSectionFromScroll());
+    }
+
+    window.addEventListener(
+      'scroll',
+      function () {
+        if (scrollRaf) return;
+        scrollRaf = window.requestAnimationFrame(function () {
+          scrollRaf = null;
+          syncOnScroll();
+        });
+      },
+      { passive: true }
+    );
+
+    window.addEventListener('hashchange', function () {
+      var h = window.location.hash.replace(/^#/, '').toLowerCase();
+      if (sectionIds.indexOf(h) !== -1) {
+        lockUntil = Date.now() + 800;
+        setActiveKey(h);
+      } else if (h === '' || h === 'inicio') {
+        lockUntil = Date.now() + 800;
+        setActiveKey('inicio');
+      }
+    });
+
+    allLinks.forEach(function (a) {
+      a.addEventListener('click', function (e) {
+        var key = getNavKeyFromHref(a.getAttribute('href'));
+        if (!key) return;
+
+        closeOffcanvasMenu();
+        lockUntil = Date.now() + 850;
+        setActiveKey(key);
+
+        if (key === 'inicio') {
+          e.preventDefault();
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+          if (window.history && window.history.pushState && window.location.hash) {
+            window.history.pushState(null, '', window.location.pathname + window.location.search);
+          }
+          return;
+        }
+
+        var target = document.getElementById(key);
+        if (target) {
+          e.preventDefault();
+          var header = document.getElementById('sp-header');
+          var headerHeight = header ? header.offsetHeight : 88;
+          var y = target.getBoundingClientRect().top + window.pageYOffset - headerHeight - 16;
+          window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
+          if (window.history && window.history.pushState) {
+            window.history.pushState(null, '', '#' + key);
+          }
+        }
+      });
+    });
+
+    var initialHash = window.location.hash.replace(/^#/, '').toLowerCase();
+    if (sectionIds.indexOf(initialHash) !== -1) {
+      lockUntil = Date.now() + 900;
+      setActiveKey(initialHash);
+    } else {
+      syncOnScroll();
+    }
+  }
+
   function boot() {
     syncHeaderCartBadge();
     fixMobileMenuIcons();
     initDetailControls();
+    initOnePageNavActive();
   }
 
   if (document.readyState === 'loading') {
