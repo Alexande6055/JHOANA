@@ -32,6 +32,10 @@ services:
         condition: service_started
     ports:
       - "127.0.0.1:3210:80"
+    volumes:
+      - joomla_images:/var/www/html/joomla/images
+      - joomla_files:/var/www/html/joomla/files
+      - joomla_logs:/var/www/html/joomla/administrator/logs
     networks:
       - joomla-net
 
@@ -57,3 +61,6 @@ networks:
 
 volumes:
   db_data:
+  joomla_images:
+  joomla_files:
+  joomla_logs:
